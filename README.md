@@ -1,4 +1,8 @@
-brew install python-tk@3.11
+brew install python-tk
+
+OR
+
+brew install python-tk@3.13
 
 - - -
 
