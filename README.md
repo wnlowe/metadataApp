@@ -8,6 +8,8 @@ pip install CTkMessagebox
 
 pip install CTkToolTip
 
+pip install pyinstaller
+
 - - -
 
 pyinstaller main.spec
