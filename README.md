@@ -12,6 +12,8 @@ pip install CTkMessagebox
 
 pip install CTkToolTip
 
+pip install mutagen
+
 pip install pyinstaller
 
 - - -
