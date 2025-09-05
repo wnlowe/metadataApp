@@ -1,13 +1,13 @@
 import customtkinter
 import Metadata
 import ucs
+from ixml import BWFMetadataWriter
 import os
 from CTkMessagebox import CTkMessagebox
 from tkinter import filedialog
 import shutil
 import sys
 from CTkToolTip import CTkToolTip
-import wavinfo
 
 ctki = customtkinter
 configInstance = getattr(Metadata, 'configMan', None)
@@ -26,8 +26,9 @@ class App(customtkinter.CTk):
         self.magenta_accent = "#9f005e"
         self.magenta_hover = "#8a0051"
         self.bgColor = '#242424'
+        self.metadata = {}
         
-        self.selectedFile = None
+        self.selectedFile: str
         self.ucs_popup = None
         self.setCatIDAll = False
         
@@ -273,15 +274,21 @@ class App(customtkinter.CTk):
     def universalOnChange(self,cb: ctki.CTkCheckBox, text: str, key: str, advSection: bool = True):
         if advSection:
             section = 'Advanced File'
+            fileKey = self.selectedFile + "_adv"
         else:
             section = 'Basic File'
-        if config.add_section(self.selectedFile, section):
-            config.set_value(self.selectedFile, key, text)
+            fileKey = self.selectedFile
+        if config.add_section(fileKey, section):
+            config.set_value(fileKey, key, text)
             config.save_config
         if cb.get():
             for file in Metadata.fileNames():
-                config.add_section(file, section)
-                config.set_value(file, key, text)
+                if advSection:
+                    config.add_section(file + "_adv", section)
+                    config.set_value(file + "_adv", key, text)
+                else:
+                    config.add_section(file, section)
+                    config.set_value(file, key, text)
                 config.save_config()
                 
     def universalCallback(self, var: ctki.StringVar, key: str, advSection: bool = True):
@@ -292,8 +299,12 @@ class App(customtkinter.CTk):
             section = 'Basic File'
         if not currText == '':
             for file in Metadata.fileNames():
-                config.add_section(file, section)
-                config.set_value(file, key, currText)
+                if advSection:
+                    config.add_section(file + "_adv", section)
+                    config.set_value(file + "_adv", key, currText)
+                else:
+                    config.add_section(file, section)
+                    config.set_value(file, key, currText)
                 config.save_config()
                     
     def onUserCatChange(self, var_name, index, mode):
@@ -373,7 +384,7 @@ class App(customtkinter.CTk):
                 
     def metadata_callback(self):
         if self.metadata_CB.get():
-            config.add_section(self.selectedFile,'Advanced File')
+            config.add_section(self.selectedFile + "_adv",'Advanced File')
             
             self.description_label = ctki.CTkLabel(self.metadata_frame, text='Description:')
             self.description_label.grid(row=1,column=0,padx=(10,5),pady=10,sticky='w')
@@ -635,7 +646,12 @@ class App(customtkinter.CTk):
     
     def micConfig_callback(self):
         if self.microphoneConfiguration_cb.get():
-            self.universalCallback(self.microphoneConfiguration_combo, 'Microphone Configuration')
+            currText = self.microphoneConfiguration_combo.get()
+            if not currText == '':
+                for file in Metadata.fileNames():
+                    config.add_section(file + "_adv", "Advanced File")
+                    config.set_value(file + '_adv', 'Microphone Configuration', currText)
+                config.save_config()
     
     def micPerspective_combo_callback(self, value):
         currentText = value
@@ -643,7 +659,12 @@ class App(customtkinter.CTk):
     
     def micPerspective_callback(self):
         if self.micPerspective_cb.get():
-            self.universalCallback(self.micPerspective_combo, 'Microphone Perspective')
+            currText = self.micPerspective_combo.get()
+            if not currText == '':
+                for file in Metadata.fileNames():
+                    config.add_section(file + "_adv", "Advanced File")
+                    config.set_value(file + '_adv', 'Microphone Perspective', currText)
+                config.save_config()
     
     def inOut_combo_callback(self,value):
         currentText = value
@@ -651,7 +672,12 @@ class App(customtkinter.CTk):
     
     def inOut_callback(self):
         if self.inOut_cb.get():
-            self.universalCallback(self.inOut_combo, 'Inside or Outside')
+            currText = self.inOut_combo.get()
+            if not currText == '':
+                for file in Metadata.fileNames():
+                    config.add_section(file + "_adv", "Advanced File")
+                    config.set_value(file + '_adv', 'Inside or Outside', currText)
+                config.save_config()
     
     def onLibraryChange(self, var_name, index, mode):
         currentText = self.library_var.get()
@@ -729,6 +755,13 @@ class App(customtkinter.CTk):
                 destinationPath = os.path.join(self.dir_entry.get(),filename)
                 try:
                     shutil.copy2(longfile,destinationPath)
+                    
+                    userFields = config.metadata[file]
+                    print(config.metadata[file])
+                    ixmlWriter = BWFMetadataWriter(destinationPath, userFields)
+                    # result = ixmlWriter.writeToWav(destinationPath, userFields)
+                    # if not ixmlWriter[0]:
+                    #     CTkMessagebox(title='Write Error', message=f'Metadata Error: \n{result[1]}',icon='warning',option_1='OK',button_color=self.magenta_accent,button_hover_color=self.magenta_hover)
                 except FileNotFoundError:
                     CTkMessagebox(title='File Error',message=f'Source File {longfile} not found.', icon='warning',option_1='OK',button_color=self.magenta_accent,button_hover_color=self.magenta_hover)
                 except PermissionError:

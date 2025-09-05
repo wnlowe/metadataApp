@@ -43,7 +43,38 @@ class ConfigManager:
             }
         }
         
+        self.metadataTranslate = {
+            'CatID': 'CatID',
+            'Category': 'CategoryFull',
+            'SubCategory': 'SubCategory',
+            'FX Name': 'FXName',
+            'User Category': 'UserCategory',
+            'Vendor Category': 'VendorCategory',
+            'Description': 'Description',
+            'Title': 'TrackTitle',
+            'Keywords': 'Keywords',
+            'Designer': 'Designer',
+            'Microphone': 'Microphone',
+            'Recording Medium': 'RecMedium',
+            'Microphone Configuration': 'RecType',
+            'Microphone Perspective': 'MicPerspective',
+            'Inside or Outside': 'MicPerspective',
+            'Library': 'Library',
+            'URL': 'URL',
+            'Manufacturer': 'Manufacturer',
+            'Location': 'Location',
+            'Notes': 'Notes'
+        }
+        
+        self.metadata = {}
+        
         self.load_config()
+        
+    def setMetadata(self, file, id, value):
+        # id = f'USER:{id}'
+        if file not in self.metadata:
+            self.metadata[file] = {}
+        self.metadata[file][id] = value
     
     def load_config(self):
         """Load configuration from file, create if doesn't exist"""
@@ -90,6 +121,12 @@ class ConfigManager:
         print(f"Added section '{section_name}' with template '{template_type}'")
         return True
     
+    def section_exists(self, section_name) -> bool:
+        if section_name in self.config.sections():
+            return True
+        else:
+            return False
+    
     def add_custom_section(self, section_name, custom_defaults=None):
         """
         Add a section with custom default values
@@ -118,7 +155,7 @@ class ConfigManager:
         except (configparser.NoSectionError, configparser.NoOptionError):
             return fallback
     
-    def set_value(self, section, key, value):
+    def set_value(self, section: str, key, value):
         """Set a value in config"""
         if section not in self.config:
             print(f"Section '{section}' doesn't exist. Creating it first.")
@@ -126,6 +163,13 @@ class ConfigManager:
         
         
         self.config.set(section, key, str(value))
+        if section.endswith('_adv'):
+            file = section[:-4]
+        else:
+            file = section
+        if key in self.metadataTranslate.keys():
+            self.setMetadata(file, self.metadataTranslate[key], value)
+        
         self.save_config()
     
     def save_config(self):
